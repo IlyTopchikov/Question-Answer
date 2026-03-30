@@ -1,5 +1,6 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity6">
 <head th:fragment="head (title)">
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
@@ -16,8 +17,19 @@
 <nav th:fragment="nav" class="navbar navbar-expand-lg bg-white border-bottom mb-4 shadow-sm">
     <div class="container py-2">
         <a class="navbar-brand brand" th:href="@{/index.html}">Вопросник</a>
-        <div class="navbar-nav ms-auto">
+        <div class="navbar-nav ms-auto d-flex align-items-center gap-2">
             <a class="nav-link" th:href="@{/leaderboard}">Таблица баллов</a>
+            <span sec:authorize="isAuthenticated()" class="text-muted small me-2">
+                <span sec:authentication="name"></span>
+            </span>
+            <a sec:authorize="isAuthenticated()" class="btn btn-sm btn-outline-secondary"
+               th:href="@{/logout}"
+               onclick="event.preventDefault(); document.getElementById('logout-form').submit();">Выйти</a>
+            <form id="logout-form" th:action="@{/logout}" method="post" style="display:none;">
+                <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden"/>
+            </form>
+            <a sec:authorize="!isAuthenticated()" class="btn btn-sm btn-outline-primary" th:href="@{/login}">Войти</a>
+            <a sec:authorize="!isAuthenticated()" class="btn btn-sm btn-primary" th:href="@{/register}">Регистрация</a>
         </div>
     </div>
 </nav>
