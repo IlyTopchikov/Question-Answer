@@ -34,6 +34,9 @@ public class Question {
     @Column(nullable = false)
     private Instant createdAt = Instant.now();
 
+    @Column(nullable = false)
+    private boolean solved = false;
+
     @Lob
     @Column(name = "image_data")
     private byte[] imageData;
