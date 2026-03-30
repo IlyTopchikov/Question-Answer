@@ -52,14 +52,18 @@ public class QaService {
         q.setBody(body.trim());
         q.setAskerName(username);
         q.setOwner(owner);
-        if (image != null && !image.isEmpty()) {
-            try {
-                q.setImageData(image.getBytes());
-                q.setImageType(image.getContentType());
-            } catch (IOException e) {
-                throw new RuntimeException("Ошибка загрузки изображения", e);
-            }
-        }
+        setImage(q, image);
+        return questionRepository.save(q);
+    }
+
+    @Transactional
+    public Question editQuestion(Long id, String title, String body, String username, boolean isAdmin, MultipartFile image) {
+        Question q = questionRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Вопрос не найден"));
+        checkOwner(q.getOwner(), username, isAdmin);
+        q.setTitle(title.trim());
+        q.setBody(body.trim());
+        if (image != null && !image.isEmpty()) setImage(q, image);
         return questionRepository.save(q);
     }
 
@@ -74,14 +78,7 @@ public class QaService {
         a.setBody(body.trim());
         a.setAnswererName(username);
         a.setOwner(owner);
-        if (image != null && !image.isEmpty()) {
-            try {
-                a.setImageData(image.getBytes());
-                a.setImageType(image.getContentType());
-            } catch (IOException e) {
-                throw new RuntimeException("Ошибка загрузки изображения", e);
-            }
-        }
+        if (image != null && !image.isEmpty()) setAnswerImage(a, image);
         question.getAnswers().add(a);
         awardPoints(username);
         questionRepository.save(question);
@@ -89,12 +86,29 @@ public class QaService {
     }
 
     @Transactional
+    public Answer editAnswer(Long answerId, String body, String username, boolean isAdmin, MultipartFile image) {
+        Answer a = answerRepository.findById(answerId)
+                .orElseThrow(() -> new NotFoundException("Ответ не найден"));
+        checkOwner(a.getOwner(), username, isAdmin);
+        a.setBody(body.trim());
+        if (image != null && !image.isEmpty()) setAnswerImage(a, image);
+        return answerRepository.save(a);
+    }
+
+    @Transactional
+    public void markSolved(Long questionId, String username, boolean isAdmin) {
+        Question q = questionRepository.findById(questionId)
+                .orElseThrow(() -> new NotFoundException("Вопрос не найден"));
+        checkOwner(q.getOwner(), username, isAdmin);
+        q.setSolved(!q.isSolved());
+        questionRepository.save(q);
+    }
+
+    @Transactional
     public void deleteQuestion(Long questionId, String username, boolean isAdmin) {
         Question q = questionRepository.findById(questionId)
                 .orElseThrow(() -> new NotFoundException("Вопрос не найден"));
-        if (!isAdmin && (q.getOwner() == null || !q.getOwner().getUsername().equals(username))) {
-            throw new SecurityException("Нет прав для удаления");
-        }
+        checkOwner(q.getOwner(), username, isAdmin);
         questionRepository.delete(q);
     }
 
@@ -102,19 +116,8 @@ public class QaService {
     public void deleteAnswer(Long answerId, String username, boolean isAdmin) {
         Answer a = answerRepository.findById(answerId)
                 .orElseThrow(() -> new NotFoundException("Ответ не найден"));
-        if (!isAdmin && (a.getOwner() == null || !a.getOwner().getUsername().equals(username))) {
-            throw new SecurityException("Нет прав для удаления");
-        }
-        Long questionId = a.getQuestion().getId();
+        checkOwner(a.getOwner(), username, isAdmin);
         answerRepository.delete(a);
-    }
-
-    private void awardPoints(String answererName) {
-        userScoreRepository
-                .findByNameIgnoreCase(answererName)
-                .ifPresentOrElse(
-                        score -> score.setPoints(score.getPoints() + pointsPerAnswer),
-                        () -> userScoreRepository.save(new UserScore(answererName, pointsPerAnswer)));
     }
 
     @Transactional(readOnly = true)
@@ -125,6 +128,53 @@ public class QaService {
                     return cmp != 0 ? cmp : a.getName().compareToIgnoreCase(b.getName());
                 })
                 .toList();
+    }
+
+    // Значки пользователя
+    public List<String> getBadges(String username) {
+        int answers = userScoreRepository.findByNameIgnoreCase(username)
+                .map(UserScore::getPoints).orElse(0);
+        var badges = new java.util.ArrayList<String>();
+        if (answers >= 1)  badges.add("🎯 Первый ответ");
+        if (answers >= 5)  badges.add("✍️ Активный участник");
+        if (answers >= 10) badges.add("💡 Помощник");
+        if (answers >= 25) badges.add("🌟 Эксперт сообщества");
+        if (answers >= 50) badges.add("🏅 Легенда");
+        return badges;
+    }
+
+    private void awardPoints(String answererName) {
+        userScoreRepository
+                .findByNameIgnoreCase(answererName)
+                .ifPresentOrElse(
+                        score -> score.setPoints(score.getPoints() + pointsPerAnswer),
+                        () -> userScoreRepository.save(new UserScore(answererName, pointsPerAnswer)));
+    }
+
+    private void checkOwner(AppUser owner, String username, boolean isAdmin) {
+        if (!isAdmin && (owner == null || !owner.getUsername().equals(username))) {
+            throw new SecurityException("Нет прав");
+        }
+    }
+
+    private void setImage(Question q, MultipartFile image) {
+        if (image == null || image.isEmpty()) return;
+        try {
+            q.setImageData(image.getBytes());
+            q.setImageType(image.getContentType());
+        } catch (IOException e) {
+            throw new RuntimeException("Ошибка загрузки изображения", e);
+        }
+    }
+
+    private void setAnswerImage(Answer a, MultipartFile image) {
+        if (image == null || image.isEmpty()) return;
+        try {
+            a.setImageData(image.getBytes());
+            a.setImageType(image.getContentType());
+        } catch (IOException e) {
+            throw new RuntimeException("Ошибка загрузки изображения", e);
+        }
     }
 
     public static class NotFoundException extends RuntimeException {
