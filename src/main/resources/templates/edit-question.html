@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head ('Редактировать вопрос')}"></head>
+<body>
+<div th:replace="~{fragments :: nav}"></div>
+<div class="container py-5 col-lg-7">
+    <div class="card card-soft">
+        <div class="card-body p-4">
+            <h1 class="h4 mb-4">Редактировать вопрос</h1>
+            <form th:action="@{/questions/{id}/edit(id=${question.id})}" method="post"
+                  enctype="multipart/form-data">
+                <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden"/>
+                <div class="mb-3">
+                    <label class="form-label">Заголовок</label>
+                    <input class="form-control" name="title" th:value="${question.title}" type="text"/>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Текст вопроса</label>
+                    <textarea class="form-control" name="body" rows="5" th:text="${question.body}"></textarea>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Новое фото (необязательно)</label>
+                    <input class="form-control" name="image" type="file" accept="image/*"/>
+                </div>
+                <button class="btn btn-primary" type="submit">Сохранить</button>
+                <a class="btn btn-link" th:href="@{/questions/{id}(id=${question.id})}">Отмена</a>
+            </form>
+        </div>
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
