@@ -17,9 +17,12 @@
 <nav th:fragment="nav" class="navbar navbar-expand-lg bg-white border-bottom mb-4 shadow-sm">
     <div class="container py-2">
         <a class="navbar-brand brand" th:href="@{/index.html}">Вопросник</a>
-        <div class="navbar-nav ms-auto d-flex align-items-center gap-2">
+        <div class="navbar-nav ms-auto d-flex align-items-center gap-2 flex-wrap">
             <a class="nav-link" th:href="@{/leaderboard}">Таблица баллов</a>
-            <span sec:authorize="isAuthenticated()" class="text-muted small me-2">
+            <a sec:authorize="isAuthenticated()" class="nav-link position-relative" th:href="@{/messages}">
+                💬 Сообщения
+            </a>
+            <span sec:authorize="isAuthenticated()" class="text-muted small">
                 <span sec:authentication="name"></span>
             </span>
             <a sec:authorize="isAuthenticated()" class="btn btn-sm btn-outline-secondary"
