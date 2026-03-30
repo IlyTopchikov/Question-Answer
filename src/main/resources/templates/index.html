@@ -1,14 +1,12 @@
 <!DOCTYPE html>
 <html lang="ru" xmlns:th="http://www.thymeleaf.org"
       xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity6">
-<head th:replace="~{fragments :: head ('Вопросник — задай вопрос')}"></head>
+<head th:replace="~{fragments :: head ('Вопросник')}"></head>
 <body>
 <div th:replace="~{fragments :: nav}"></div>
 <div class="container pb-5">
     <div class="row g-4">
         <div class="col-lg-8">
-
-            <!-- Форма только для авторизованных -->
             <div class="card card-soft mb-4" sec:authorize="isAuthenticated()">
                 <div class="card-body p-4">
                     <h2 class="h4 mb-3">Задать вопрос</h2>
@@ -16,49 +14,46 @@
                           enctype="multipart/form-data" novalidate>
                         <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden"/>
                         <div class="mb-3">
-                            <label class="form-label" for="title">Заголовок</label>
-                            <input class="form-control" id="title" th:field="*{title}" type="text"
-                                   placeholder="Кратко, о чём вопрос"/>
-                            <div class="invalid-feedback d-block" th:if="${#fields.hasErrors('title')}"
-                                 th:errors="*{title}"></div>
+                            <label class="form-label">Заголовок</label>
+                            <input class="form-control" th:field="*{title}" type="text" placeholder="Кратко, о чём вопрос"/>
+                            <div class="invalid-feedback d-block" th:if="${#fields.hasErrors('title')}" th:errors="*{title}"></div>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label" for="body">Текст вопроса</label>
-                            <textarea class="form-control" id="body" th:field="*{body}" rows="4"
-                                      placeholder="Подробности"></textarea>
-                            <div class="invalid-feedback d-block" th:if="${#fields.hasErrors('body')}"
-                                 th:errors="*{body}"></div>
+                            <label class="form-label">Текст вопроса</label>
+                            <textarea class="form-control" th:field="*{body}" rows="4" placeholder="Подробности"></textarea>
+                            <div class="invalid-feedback d-block" th:if="${#fields.hasErrors('body')}" th:errors="*{body}"></div>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label" for="image">Фото (необязательно)</label>
-                            <input class="form-control" id="image" name="image" type="file" accept="image/*"/>
+                            <label class="form-label">Фото (необязательно)</label>
+                            <input class="form-control" name="image" type="file" accept="image/*"/>
                         </div>
                         <button class="btn btn-primary px-4" type="submit">Опубликовать</button>
                     </form>
                 </div>
             </div>
 
-            <!-- Приглашение войти -->
             <div class="alert alert-info" sec:authorize="!isAuthenticated()">
                 <a th:href="@{/login}">Войдите</a> или <a th:href="@{/register}">зарегистрируйтесь</a>, чтобы задать вопрос.
             </div>
 
             <h2 class="h5 mb-3">Последние вопросы</h2>
-            <div th:if="${#lists.isEmpty(questions)}" class="text-muted">Пока нет вопросов — задайте первый.</div>
+            <div th:if="${#lists.isEmpty(questions)}" class="text-muted">Пока нет вопросов.</div>
             <div class="list-group list-group-flush" th:unless="${#lists.isEmpty(questions)}">
                 <a class="list-group-item list-group-item-action rounded-3 mb-2 border card-soft py-3"
                    th:each="q : ${questions}"
                    th:href="@{/questions/{id}(id=${q.id})}">
                     <div class="d-flex justify-content-between align-items-start gap-2">
                         <div>
-                            <div class="fw-semibold" th:text="${q.title}">Заголовок</div>
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="badge bg-success" th:if="${q.solved}">✅</span>
+                                <span class="fw-semibold" th:text="${q.title}">Заголовок</span>
+                            </div>
                             <div class="small text-muted mt-1">
                                 от <span th:text="${q.askerName}">имя</span>
                                 · <span th:text="${#dates.format(new java.util.Date(q.createdAt.toEpochMilli()), 'dd.MM.yyyy HH:mm')}">дата</span>
                             </div>
                         </div>
-                        <span class="badge text-bg-light border"
-                              th:text="${#lists.size(q.answers)} + ' отв.'">0</span>
+                        <span class="badge text-bg-light border" th:text="${#lists.size(q.answers)} + ' отв.'">0</span>
                     </div>
                 </a>
             </div>
