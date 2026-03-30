@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head (${question.title})}"></head>
+<body>
+<div th:replace="~{fragments :: nav}"></div>
+<div class="container pb-5 col-lg-8">
+    <div th:if="${param.answered != null}" class="alert alert-success alert-dismissible fade show" role="alert">
+        Ответ опубликован. Баллы начислены отвечающему.
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+
+    <div class="card card-soft mb-4">
+        <div class="card-body p-4">
+            <h1 class="h3 mb-3" th:text="${question.title}">Заголовок</h1>
+            <p class="text-muted small mb-3">
+                Спросил(а) <strong th:text="${question.askerName}">имя</strong>
+                · <span th:text="${#dates.format(new java.util.Date(question.createdAt.toEpochMilli()), 'dd.MM.yyyy HH:mm')}">дата</span>
+            </p>
+            <div class="question-body" style="white-space: pre-wrap;" th:text="${question.body}">Текст</div>
+        </div>
+    </div>
+
+    <h2 class="h5 mb-3">Ответы</h2>
+    <div th:if="${#lists.isEmpty(question.answers)}" class="text-muted mb-4">Пока нет ответов — будьте первым.</div>
+    <div class="mb-4" th:unless="${#lists.isEmpty(question.answers)}">
+        <div class="card card-soft mb-3" th:each="a : ${question.answers}">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                    <span class="fw-semibold" th:text="${a.answererName}">Имя</span>
+                    <span class="badge text-bg-light border small"
+                          th:text="${#dates.format(new java.util.Date(a.createdAt.toEpochMilli()), 'dd.MM.yyyy HH:mm')}">дата</span>
+                </div>
+                <div style="white-space: pre-wrap;" th:text="${a.body}">Текст ответа</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card card-soft">
+        <div class="card-body p-4">
+            <h3 class="h6 mb-3">Ваш ответ</h3>
+            <p class="small text-muted">За ответ вы получите балл (см. главную страницу).</p>
+            <form th:action="@{/questions/{id}/answers(id=${question.id})}" th:object="${newAnswer}" method="post"
+                  novalidate>
+                <div class="mb-3">
+                    <label class="form-label" for="body">Текст</label>
+                    <textarea class="form-control" id="body" th:field="*{body}" rows="4"></textarea>
+                    <div class="invalid-feedback d-block" th:if="${#fields.hasErrors('body')}" th:errors="*{body}"></div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label" for="answererName">Ваше имя</label>
+                    <input class="form-control" id="answererName" th:field="*{answererName}" type="text"
+                           autocomplete="name"/>
+                    <div class="invalid-feedback d-block" th:if="${#fields.hasErrors('answererName')}"
+                         th:errors="*{answererName}"></div>
+                </div>
+                <button class="btn btn-primary" type="submit">Отправить ответ</button>
+                <a class="btn btn-link" th:href="@{/index.html}">На главную</a>
+            </form>
+        </div>
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

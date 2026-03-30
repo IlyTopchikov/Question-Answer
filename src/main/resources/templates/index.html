@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head ('Вопросник — задай вопрос')}"></head>
+<body>
+<div th:replace="~{fragments :: nav}"></div>
+<div class="container pb-5">
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="card card-soft mb-4">
+                <div class="card-body p-4">
+                    <h2 class="h4 mb-3">Задать вопрос</h2>
+                    <p class="text-muted small mb-4">После публикации вопроса другие пользователи смогут ответить. За каждый
+                        ответ автору начисляется балл (см. настройку <code>app.points.per-answer</code>).</p>
+                    <form th:action="@{/questions}" th:object="${newQuestion}" method="post" novalidate>
+                        <div class="mb-3">
+                            <label class="form-label" for="title">Заголовок</label>
+                            <input class="form-control" id="title" th:field="*{title}" type="text"
+                                   placeholder="Кратко, о чём вопрос"/>
+                            <div class="invalid-feedback d-block" th:if="${#fields.hasErrors('title')}"
+                                 th:errors="*{title}"></div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="body">Текст вопроса</label>
+                            <textarea class="form-control" id="body" th:field="*{body}" rows="4"
+                                      placeholder="Подробности"></textarea>
+                            <div class="invalid-feedback d-block" th:if="${#fields.hasErrors('body')}"
+                                 th:errors="*{body}"></div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="askerName">Ваше имя</label>
+                            <input class="form-control" id="askerName" th:field="*{askerName}" type="text"
+                                   autocomplete="name"/>
+                            <div class="invalid-feedback d-block" th:if="${#fields.hasErrors('askerName')}"
+                                 th:errors="*{askerName}"></div>
+                        </div>
+                        <button class="btn btn-primary px-4" type="submit">Опубликовать</button>
+                    </form>
+                </div>
+            </div>
+
+            <h2 class="h5 mb-3">Последние вопросы</h2>
+            <div th:if="${#lists.isEmpty(questions)}" class="text-muted">Пока нет вопросов — задайте первый.</div>
+            <div class="list-group list-group-flush" th:unless="${#lists.isEmpty(questions)}">
+                <a class="list-group-item list-group-item-action rounded-3 mb-2 border card-soft py-3"
+                   th:each="q : ${questions}"
+                   th:href="@{/questions/{id}(id=${q.id})}">
+                    <div class="d-flex justify-content-between align-items-start gap-2">
+                        <div>
+                            <div class="fw-semibold" th:text="${q.title}">Заголовок</div>
+                            <div class="small text-muted mt-1">
+                                от <span th:text="${q.askerName}">имя</span>
+                                · <span th:text="${#dates.format(new java.util.Date(q.createdAt.toEpochMilli()), 'dd.MM.yyyy HH:mm')}">дата</span>
+                            </div>
+                        </div>
+                        <span class="badge text-bg-light border"
+                              th:text="${#lists.size(q.answers)} + ' отв.'">0</span>
+                    </div>
+                </a>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card card-soft sticky-lg-top" style="top: 1rem;">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h3 class="h6 mb-0">Таблица баллов</h3>
+                        <a class="small" th:href="@{/leaderboard}">Все</a>
+                    </div>
+                    <p class="small text-muted">Баллы начисляются за каждый опубликованный ответ.</p>
+                    <ol class="list-group list-group-numbered list-group-flush" th:if="${!#lists.isEmpty(leaderboard)}">
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0 bg-transparent border-0"
+                            th:each="row, iter : ${leaderboard}" th:if="${iter.index < 10}">
+                            <span th:text="${row.name}">Имя</span>
+                            <span class="badge badge-points rounded-pill" th:text="${row.points}">0</span>
+                        </li>
+                    </ol>
+                    <p class="text-muted small mb-0" th:if="${#lists.isEmpty(leaderboard)}">Пока никто не ответил.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
