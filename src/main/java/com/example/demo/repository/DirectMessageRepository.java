@@ -19,8 +19,9 @@ public interface DirectMessageRepository extends JpaRepository<DirectMessage, Lo
     List<DirectMessage> findConversation(@Param("a") AppUser a, @Param("b") AppUser b);
 
     @Query("""
-        SELECT DISTINCT CASE WHEN m.sender = :user THEN m.receiver ELSE m.sender END
-        FROM DirectMessage m WHERE m.sender = :user OR m.receiver = :user
+        SELECT DISTINCT m.receiver FROM DirectMessage m WHERE m.sender = :user
+        UNION
+        SELECT DISTINCT m.sender FROM DirectMessage m WHERE m.receiver = :user
     """)
     List<AppUser> findContacts(@Param("user") AppUser user);
 
