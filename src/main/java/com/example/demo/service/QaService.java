@@ -117,7 +117,23 @@ public class QaService {
         Answer a = answerRepository.findById(answerId)
                 .orElseThrow(() -> new NotFoundException("Ответ не найден"));
         checkOwner(a.getOwner(), username, isAdmin);
+        deductPoints(a.getAnswererName());
         answerRepository.delete(a);
+    }
+
+    @Transactional
+    public void setPoints(String username, int points) {
+        userScoreRepository.findByNameIgnoreCase(username)
+                .ifPresentOrElse(
+                        score -> score.setPoints(Math.max(0, points)),
+                        () -> { if (points > 0) userScoreRepository.save(new UserScore(username, points)); }
+                );
+    }
+
+    @Transactional
+    public void resetPoints(String username) {
+        userScoreRepository.findByNameIgnoreCase(username)
+                .ifPresent(score -> score.setPoints(0));
     }
 
     @Transactional(readOnly = true)
@@ -130,7 +146,6 @@ public class QaService {
                 .toList();
     }
 
-    // Значки пользователя
     public List<String> getBadges(String username) {
         int answers = userScoreRepository.findByNameIgnoreCase(username)
                 .map(UserScore::getPoints).orElse(0);
@@ -143,12 +158,16 @@ public class QaService {
         return badges;
     }
 
-    private void awardPoints(String answererName) {
-        userScoreRepository
-                .findByNameIgnoreCase(answererName)
+    private void awardPoints(String name) {
+        userScoreRepository.findByNameIgnoreCase(name)
                 .ifPresentOrElse(
-                        score -> score.setPoints(score.getPoints() + pointsPerAnswer),
-                        () -> userScoreRepository.save(new UserScore(answererName, pointsPerAnswer)));
+                        s -> s.setPoints(s.getPoints() + pointsPerAnswer),
+                        () -> userScoreRepository.save(new UserScore(name, pointsPerAnswer)));
+    }
+
+    private void deductPoints(String name) {
+        userScoreRepository.findByNameIgnoreCase(name)
+                .ifPresent(s -> s.setPoints(Math.max(0, s.getPoints() - pointsPerAnswer)));
     }
 
     private void checkOwner(AppUser owner, String username, boolean isAdmin) {
@@ -159,22 +178,14 @@ public class QaService {
 
     private void setImage(Question q, MultipartFile image) {
         if (image == null || image.isEmpty()) return;
-        try {
-            q.setImageData(image.getBytes());
-            q.setImageType(image.getContentType());
-        } catch (IOException e) {
-            throw new RuntimeException("Ошибка загрузки изображения", e);
-        }
+        try { q.setImageData(image.getBytes()); q.setImageType(image.getContentType()); }
+        catch (IOException e) { throw new RuntimeException("Ошибка загрузки изображения", e); }
     }
 
     private void setAnswerImage(Answer a, MultipartFile image) {
         if (image == null || image.isEmpty()) return;
-        try {
-            a.setImageData(image.getBytes());
-            a.setImageType(image.getContentType());
-        } catch (IOException e) {
-            throw new RuntimeException("Ошибка загрузки изображения", e);
-        }
+        try { a.setImageData(image.getBytes()); a.setImageType(image.getContentType()); }
+        catch (IOException e) { throw new RuntimeException("Ошибка загрузки изображения", e); }
     }
 
     public static class NotFoundException extends RuntimeException {
